@@ -8,141 +8,88 @@ import (
 	"strings"
 )
 
-// Чтение матрицы заданного размера
-func inputMatrix(size int) [][]float64 {
-	matrix := make([][]float64, size)
+type Student struct {
+	FIO    string
+	Grades []float64
+}
+
+// Метод для подсчета среднего балла студента
+func (s *Student) AverageGrade() float64 {
+	if len(s.Grades) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, grade := range s.Grades {
+		sum += grade
+	}
+	return sum / float64(len(s.Grades))
+}
+
+// Ввод данных о студенте
+func inputStudent() Student {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("Введите элементы матрицы %dx%d построчно через пробел:\n", size, size)
-	for i := 0; i < size; i++ {
-		fmt.Printf("Строка %d: ", i+1)
-		scanner.Scan()
-		line := scanner.Text()
-		elements := strings.Fields(line)
-		if len(elements) != size {
-			fmt.Println("Некорректное количество элементов, попробуйте снова.")
-			i--
+	fmt.Print("Введите ФИО студента: ")
+	scanner.Scan()
+	fio := scanner.Text()
+
+	var grades []float64
+	fmt.Println("Введите оценки через пробел:")
+	scanner.Scan()
+	gradesStr := scanner.Text()
+	gradesSlice := strings.Fields(gradesStr)
+
+	for _, g := range gradesSlice {
+		grade, err := strconv.ParseFloat(g, 64)
+		if err != nil {
+			fmt.Println("Некорректная оценка, пропускаем.")
 			continue
 		}
-		row := make([]float64, size)
-		for j, val := range elements {
-			num, err := strconv.ParseFloat(val, 64)
-			if err != nil {
-				fmt.Println("Некорректное число, попробуйте снова.")
-				i--
-				break
-			}
-			row[j] = num
-		}
-		matrix[i] = row
+		grades = append(grades, grade)
 	}
-	return matrix
+
+	return Student{FIO: fio, Grades: grades}
 }
 
-// Вывод матрицы
-func printMatrix(matrix [][]float64) {
-	for _, row := range matrix {
-		for _, val := range row {
-			fmt.Printf("%8.2f ", val)
-		}
-		fmt.Println()
+// Вывод списка студентов
+func printStudents(students map[string]Student) {
+	fmt.Println("Список студентов:")
+	for key, student := range students {
+		fmt.Printf("ID: %s, ФИО: %s, Оценки: %v, Средний балл: %.2f\n", key, student.FIO, student.Grades, student.AverageGrade())
 	}
-}
-
-// Сложение двух матриц
-func addMatrices(a, b [][]float64) [][]float64 {
-	size := len(a)
-	result := make([][]float64, size)
-	for i := 0; i < size; i++ {
-		result[i] = make([]float64, size)
-		for j := 0; j < size; j++ {
-			result[i][j] = a[i][j] + b[i][j]
-		}
-	}
-	return result
-}
-
-// Умножение матрицы на число
-func multiplyMatrixByNumber(matrix [][]float64, number float64) [][]float64 {
-	size := len(matrix)
-	result := make([][]float64, size)
-	for i := 0; i < size; i++ {
-		result[i] = make([]float64, size)
-		for j := 0; j < size; j++ {
-			result[i][j] = matrix[i][j] * number
-		}
-	}
-	return result
-}
-
-// Умножение двух матриц
-func multiplyMatrices(a, b [][]float64) [][]float64 {
-	size := len(a)
-	result := make([][]float64, size)
-	for i := 0; i < size; i++ {
-		result[i] = make([]float64, size)
-		for j := 0; j < size; j++ {
-			sum := 0.0
-			for k := 0; k < size; k++ {
-				sum += a[i][k] * b[k][j]
-			}
-			result[i][j] = sum
-		}
-	}
-	return result
 }
 
 func main() {
+	students := make(map[string]Student)
 	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Println("Выберите размер матрицы (2 или 3):")
-	scanner.Scan()
-	sizeInput := scanner.Text()
-	size, err := strconv.Atoi(sizeInput)
-	if err != nil || (size != 2 && size != 3) {
-		fmt.Println("Некорректный ввод. Завершение.")
-		return
-	}
-
-	// Ввод первой матрицы
-	fmt.Println("Введите первую матрицу:")
-	matrixA := inputMatrix(size)
-
-	// Ввод второй матрицы
-	fmt.Println("Введите вторую матрицу:")
-	matrixB := inputMatrix(size)
+	idCounter := 1
 
 	for {
-		fmt.Println("\nВыберите операцию:")
-		fmt.Println("1 - Сложение матриц")
-		fmt.Println("2 - Умножение матрицы на число")
-		fmt.Println("3 - Умножение двух матриц")
-		fmt.Println("4 - Выход")
+		fmt.Println("\nМеню:")
+		fmt.Println("1 - Добавить студента")
+		fmt.Println("2 - Показать всех студентов")
+		fmt.Println("3 - Фильтр по среднему баллу (ниже 4)")
+		fmt.Println("4 - Выйти")
+		fmt.Print("Выберите действие: ")
 		scanner.Scan()
 		choice := scanner.Text()
 
 		switch choice {
 		case "1":
-			result := addMatrices(matrixA, matrixB)
-			fmt.Println("Результат сложения:")
-			printMatrix(result)
+			student := inputStudent()
+			id := strconv.Itoa(idCounter)
+			students[id] = student
+			idCounter++
 		case "2":
-			fmt.Println("Введите число для умножения:")
-			scanner.Scan()
-			numStr := scanner.Text()
-			num, err := strconv.ParseFloat(numStr, 64)
-			if err != nil {
-				fmt.Println("Некорректный ввод.")
-				continue
-			}
-			result := multiplyMatrixByNumber(matrixA, num)
-			fmt.Println("Результат умножения матрицы на число:")
-			printMatrix(result)
+			printStudents(students)
 		case "3":
-			result := multiplyMatrices(matrixA, matrixB)
-			fmt.Println("Результат умножения двух матриц:")
-			printMatrix(result)
+			fmt.Println("Студенты со средним баллом ниже 4:")
+			for id, student := range students {
+				if student.AverageGrade() < 4 {
+					fmt.Printf("ID: %s, ФИО: %s, Средний балл: %.2f\n", id, student.FIO, student.AverageGrade())
+				}
+			}
 		case "4":
-			fmt.Println("Выход из программы.")
+			fmt.Println("Выход.")
 			return
 		default:
 			fmt.Println("Некорректный выбор, попробуйте снова.")
